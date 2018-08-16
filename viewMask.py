@@ -168,7 +168,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         # collect data
         cameraPath = view.getCamera()
         camera = om.MFnCamera(cameraPath)
-        fnDagNode = om.MFnDagNode(path)
+        fnDagNode = om.MFnDagNode(path.extendToShape())
         cameraName = fnDagNode.findPlug("camera", False).asString()
         textFields = []
         for i in range(0, len(ViewMaskLocator.TEXT_ATTRS), 2):
@@ -312,7 +312,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         # Restore the state
         glFT.glPopAttrib()
         # Ending the OpenGL drawing
-        view.endGL(0)
+        view.endGL()
 
     def isCameraMatch(self, cameraPath, name):
         """
@@ -335,7 +335,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
             # 转换位置
             textPositionNearPlane = om.MPoint()
             textPositionFarPlane = om.MPoint()
-            view.viewToWorld(position2d.x, position2d.y, textPositionNearPlane, textPositionFarPlane)
+            view.viewToWorld(int(position2d.x), int(position2d.y), textPositionNearPlane, textPositionFarPlane)
             view.drawText(text, textPositionNearPlane, alignment)
 
 
