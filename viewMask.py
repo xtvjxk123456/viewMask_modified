@@ -384,49 +384,45 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
 
         fnDagNode = om.MFnDagNode(objPath)
 
-        data.cameraName = fnDagNode.findPlug("camera", False).asString()
+        data.camera_name = fnDagNode.findPlug("camera", False).asString()
 
-        data.textFields = []
+        data.text_fields = []
         for i in range(0, len(ViewMaskLocator.TEXT_ATTRS), 2):
-            data.textFields.append(fnDagNode.findPlug(ViewMaskLocator.TEXT_ATTRS[i], False).asString())
+            data.text_fields.append(fnDagNode.findPlug(ViewMaskLocator.TEXT_ATTRS[i], False).asString())
 
-        counterPadding = fnDagNode.findPlug("counterPadding", False).asInt()
-        if counterPadding < 1:
-            counterPadding = 1
-        elif counterPadding > 6:
-            counterPadding = 6
+        counter_padding = fnDagNode.findPlug("counterPadding", False).asInt()
+        if counter_padding < 1:
+            counter_padding = 1
+        elif counter_padding > 6:
+            counter_padding = 6
 
-        camera = om.MFnCamera(cameraPath)
-        data.textFields[4] = "{0}/{1:.1f}".format(cameraPath.partialPathName(), camera.focalLength)
+        current_time = int(cmds.currentTime(q=True))
+        counter_position = fnDagNode.findPlug("counterPosition", False).asInt()
+        if counter_position > 0 and counter_position <= len(ViewMaskLocator.TEXT_ATTRS) / 2:
+            data.text_fields[counter_position - 1] = "{0}".format(str(current_time).zfill(counter_padding))
 
-        currentTime = int(cmds.currentTime(q=True))
-        counterPosition = fnDagNode.findPlug("counterPosition", False).asInt()
-        if counterPosition > 0 and counterPosition <= len(ViewMaskLocator.TEXT_ATTRS) / 2:
-            data.textFields[counterPosition - 1] = "{0}{1}".format(str(currentTime).zfill(counterPadding),
-                                                                   data.textFields[counterPosition - 1])
+        data.text_padding = fnDagNode.findPlug("textPadding", False).asInt()
 
-        data.textPadding = fnDagNode.findPlug("textPadding", False).asInt()
-
-        data.fontName = fnDagNode.findPlug("fontName", False).asString()
+        data.font_name = fnDagNode.findPlug("fontName", False).asString()
 
         r = fnDagNode.findPlug("fontColorR", False).asFloat()
         g = fnDagNode.findPlug("fontColorG", False).asFloat()
         b = fnDagNode.findPlug("fontColorB", False).asFloat()
         a = fnDagNode.findPlug("fontAlpha", False).asFloat()
-        data.fontColor = om.MColor((r, g, b, a))
+        data.font_color = om.MColor((r, g, b, a))
 
-        data.fontScale = fnDagNode.findPlug("fontScale", False).asFloat()
+        data.font_scale = fnDagNode.findPlug("fontScale", False).asFloat()
 
         r = fnDagNode.findPlug("borderColorR", False).asFloat()
         g = fnDagNode.findPlug("borderColorG", False).asFloat()
         b = fnDagNode.findPlug("borderColorB", False).asFloat()
         a = fnDagNode.findPlug("borderAlpha", False).asFloat()
-        data.borderColor = om.MColor((r, g, b, a))
+        data.border_color = om.MColor((r, g, b, a))
 
-        data.borderScale = fnDagNode.findPlug("borderScale", False).asFloat()
+        data.border_scale = fnDagNode.findPlug("borderScale", False).asFloat()
 
-        data.topBorder = fnDagNode.findPlug("topBorder", False).asBool()
-        data.bottomBorder = fnDagNode.findPlug("bottomBorder", False).asBool()
+        data.top_border = fnDagNode.findPlug("topBorder", False).asBool()
+        data.bottom_border = fnDagNode.findPlug("bottomBorder", False).asBool()
 
         return data
 
@@ -441,92 +437,81 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
         if not isinstance(data, ViewMaskData):
             return
 
-        cameraPath = frameContext.getCurrentCameraPath()
-        camera = om.MFnCamera(cameraPath)
+        camera_path = frameContext.getCurrentCameraPath()
+        camera = om.MFnCamera(camera_path)
 
-        if data.cameraName and self.cameraExists(data.cameraName) and not self.isCameraMatch(cameraPath,
-                                                                                             data.cameraName):
+        if data.camera_name and self.cameraExists(data.camera_name) and not self.isCameraMatch(camera_path, data.camera_name):
             return
 
-        cameraAspectRatio = camera.aspectRatio()
-        deviceAspectRatio = cmds.getAttr("defaultResolution.deviceAspectRatio")
+        camera_aspect_ratio = camera.aspectRatio()
+        device_aspect_ratio = cmds.getAttr("defaultResolution.deviceAspectRatio")
 
-        vpX, vpY, vpWidth, vpHeight = frameContext.getViewportDimensions()
-        vpHalfWidth = 0.5 * vpWidth
-        vpHalfHeight = 0.5 * vpHeight
-        vpAspectRatio = vpWidth / float(vpHeight)
+        vp_x, vp_y, vp_width, vp_height = frameContext.getViewportDimensions()
+        vp_half_width = 0.5 * vp_width
+        vp_half_height = 0.5 * vp_height
+        vp_aspect_ratio = vp_width / float(vp_height)
 
         scale = 1.0
 
         if camera.filmFit == om.MFnCamera.kHorizontalFilmFit:
-            # maskWidth = vpWidth / camera.overscan
-            maskWidth = vpWidth
-            maskHeight = maskWidth / deviceAspectRatio
+            mask_width = vp_width / camera.overscan
+            mask_height = mask_width / device_aspect_ratio
         elif camera.filmFit == om.MFnCamera.kVerticalFilmFit:
-            # maskHeight = vpHeight / camera.overscan
-            maskHeight = vpHeight
-            maskWidth = maskHeight * deviceAspectRatio
+            mask_height = vp_height / camera.overscan
+            mask_width = mask_height * device_aspect_ratio
         elif camera.filmFit == om.MFnCamera.kFillFilmFit:
-            if vpAspectRatio < cameraAspectRatio:
-                if cameraAspectRatio < deviceAspectRatio:
-                    scale = cameraAspectRatio / vpAspectRatio
+            if vp_aspect_ratio < camera_aspect_ratio:
+                if camera_aspect_ratio < device_aspect_ratio:
+                    scale = camera_aspect_ratio / vp_aspect_ratio
                 else:
-                    scale = deviceAspectRatio / vpAspectRatio
-            elif cameraAspectRatio > deviceAspectRatio:
-                scale = deviceAspectRatio / cameraAspectRatio
+                    scale = device_aspect_ratio / vp_aspect_ratio
+            elif camera_aspect_ratio > device_aspect_ratio:
+                scale = device_aspect_ratio / camera_aspect_ratio
 
-            # maskWidth = vpWidth / camera.overscan * scale
-            maskWidth = vpWidth * scale
-            maskHeight = maskWidth / deviceAspectRatio
+            mask_width = vp_width / camera.overscan * scale
+            mask_height = mask_width / device_aspect_ratio
 
         elif camera.filmFit == om.MFnCamera.kOverscanFilmFit:
-            if vpAspectRatio < cameraAspectRatio:
-                if cameraAspectRatio < deviceAspectRatio:
-                    scale = cameraAspectRatio / vpAspectRatio
+            if vp_aspect_ratio < camera_aspect_ratio:
+                if camera_aspect_ratio < device_aspect_ratio:
+                    scale = camera_aspect_ratio / vp_aspect_ratio
                 else:
-                    scale = deviceAspectRatio / vpAspectRatio
-            elif cameraAspectRatio > deviceAspectRatio:
-                scale = deviceAspectRatio / cameraAspectRatio
+                    scale = device_aspect_ratio / vp_aspect_ratio
+            elif camera_aspect_ratio > device_aspect_ratio:
+                scale = device_aspect_ratio / camera_aspect_ratio
 
-            # maskHeight = vpHeight / camera.overscan / scale
-            maskHeight = vpHeight / scale
-            maskWidth = maskHeight * deviceAspectRatio
+            mask_height = vp_height / camera.overscan / scale
+            mask_width = mask_height * device_aspect_ratio
         else:
-            om.MGlobal.displayError("[ViewMask] Unknown Film Fit value")
+            om.MGlobal.displayError("[ZShotMask] Unknown Film Fit value")
             return
 
-        maskHalfWidth = 0.5 * maskWidth
-        maskX = vpHalfWidth - maskHalfWidth
+        mask_half_width = 0.5 * mask_width
+        mask_x = vp_half_width - mask_half_width
 
-        maskHalfHeight = 0.5 * maskHeight
-        maskBottomY = vpHalfHeight - maskHalfHeight
-        maskTopY = vpHalfHeight + maskHalfHeight
+        mask_half_height = 0.5 * mask_height
+        mask_bottom_y = vp_half_height - mask_half_height
+        mask_top_y = vp_half_height + mask_half_height
 
-        borderHeight = int(0.05 * maskHeight * data.borderScale)
-        bgSize = (int(maskWidth), borderHeight)
+        border_height = int(0.05 * mask_height * data.border_scale)
+        background_size = (int(mask_width), border_height)
 
         drawManager.beginDrawable()
-        drawManager.setFontName(data.fontName)
-        drawManager.setFontSize(int((borderHeight - borderHeight * 0.15) * data.fontScale))
-        drawManager.setColor(data.fontColor)
+        drawManager.setFontName(data.font_name)
+        drawManager.setFontSize(int((border_height - border_height * 0.15) * data.font_scale))
+        drawManager.setColor(data.font_color)
 
-        if data.topBorder:
-            self.drawBorder(drawManager, om.MPoint(maskX, maskTopY - borderHeight), bgSize, data.borderColor)
-        if data.bottomBorder:
-            self.drawBorder(drawManager, om.MPoint(maskX, maskBottomY), bgSize, data.borderColor)
+        if data.top_border:
+            self.drawBorder(drawManager, om.MPoint(mask_x, mask_top_y - border_height), background_size, data.border_color)
+        if data.bottom_border:
+            self.drawBorder(drawManager, om.MPoint(mask_x, mask_bottom_y), background_size, data.border_color)
 
-        self.drawText(drawManager, om.MPoint(maskX + data.textPadding, maskTopY - borderHeight), data.textFields[0],
-                      omr.MUIDrawManager.kLeft, bgSize)
-        self.drawText(drawManager, om.MPoint(vpHalfWidth, maskTopY - borderHeight), data.textFields[1],
-                      omr.MUIDrawManager.kCenter, bgSize)
-        self.drawText(drawManager, om.MPoint(maskX + maskWidth - data.textPadding, maskTopY - borderHeight),
-                      data.textFields[2], omr.MUIDrawManager.kRight, bgSize)
-        self.drawText(drawManager, om.MPoint(maskX + data.textPadding, maskBottomY), data.textFields[3],
-                      omr.MUIDrawManager.kLeft, bgSize)
-        self.drawText(drawManager, om.MPoint(vpHalfWidth, maskBottomY), data.textFields[4], omr.MUIDrawManager.kCenter,
-                      bgSize)
-        self.drawText(drawManager, om.MPoint(maskX + maskWidth - data.textPadding, maskBottomY), data.textFields[5],
-                      omr.MUIDrawManager.kRight, bgSize)
+        self.drawText(drawManager, om.MPoint(mask_x + data.text_padding, mask_top_y - border_height), data.text_fields[0], omr.MUIDrawManager.kLeft, background_size)
+        self.drawText(drawManager, om.MPoint(vp_half_width, mask_top_y - border_height), data.text_fields[1], omr.MUIDrawManager.kCenter, background_size)
+        self.drawText(drawManager, om.MPoint(mask_x + mask_width - data.text_padding, mask_top_y - border_height), data.text_fields[2], omr.MUIDrawManager.kRight, background_size)
+        self.drawText(drawManager, om.MPoint(mask_x + data.text_padding, mask_bottom_y), data.text_fields[3], omr.MUIDrawManager.kLeft, background_size)
+        self.drawText(drawManager, om.MPoint(vp_half_width, mask_bottom_y), data.text_fields[4], omr.MUIDrawManager.kCenter, background_size)
+        self.drawText(drawManager, om.MPoint(mask_x + mask_width - data.text_padding, mask_bottom_y), data.text_fields[5], omr.MUIDrawManager.kRight, background_size)
 
         drawManager.endDrawable()
 
