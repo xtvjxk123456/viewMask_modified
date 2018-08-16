@@ -179,13 +179,12 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         elif counterPadding > 6:
             counterPadding = 6
 
-        textFields[4] = "{0}/{1:.1f}".format(cameraPath.partialPathName(), camera.focalLength)
+        # textFields[4] = "{0}/{1:.1f}".format(cameraPath.partialPathName(), camera.focalLength)
 
-        currentTime = int(cmds.currentTime(q=True))
-        counterPosition = fnDagNode.findPlug("counterPosition", False).asInt()
-        if counterPosition > 0 and counterPosition <= len(ViewMaskLocator.TEXT_ATTRS) / 2:
-            textFields[counterPosition - 1] = "{0}{1}".format(str(currentTime).zfill(counterPadding),
-                                                              textFields[counterPosition - 1])
+        # currentTime = int(cmds.currentTime(q=True))
+        # counterPosition = fnDagNode.findPlug("counterPosition", False).asInt()
+        # if counterPosition > 0 and counterPosition <= len(ViewMaskLocator.TEXT_ATTRS) / 2:
+        #     textFields[counterPosition - 1] = "{0}".format(str(currentTime).zfill(counterPadding), )
 
         textPadding = fnDagNode.findPlug("textPadding", False).asInt()
 
@@ -208,7 +207,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         topBorder = fnDagNode.findPlug("topBorder", False).asBool()
         bottomBorder = fnDagNode.findPlug("bottomBorder", False).asBool()
 
-        # draw
+        # draw-----------------------------------------------------------
         if cameraName and cameraName in cmds.listCameras() and not self.isCameraMatch(cameraPath, cameraName):
             return
 
@@ -225,11 +224,11 @@ class ViewMaskLocator(omui.MPxLocatorNode):
 
         if camera.filmFit == om.MFnCamera.kHorizontalFilmFit:
             # maskWidth = vpWidth / camera.overscan
-            maskWidth = vpWidth
+            maskWidth = vpWidth/camera.overscan
             maskHeight = maskWidth / deviceAspectRatio
         elif camera.filmFit == om.MFnCamera.kVerticalFilmFit:
             # maskHeight = vpHeight / camera.overscan
-            maskHeight = vpHeight
+            maskHeight = vpHeight/camera.overscan
             maskWidth = maskHeight * deviceAspectRatio
         elif camera.filmFit == om.MFnCamera.kFillFilmFit:
             if vpAspectRatio < cameraAspectRatio:
@@ -241,7 +240,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
                 scale = deviceAspectRatio / cameraAspectRatio
 
             # maskWidth = vpWidth / camera.overscan * scale
-            maskWidth = vpWidth * scale
+            maskWidth = vpWidth/camera.overscan * scale
             maskHeight = maskWidth / deviceAspectRatio
 
         elif camera.filmFit == om.MFnCamera.kOverscanFilmFit:
@@ -254,7 +253,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
                 scale = deviceAspectRatio / cameraAspectRatio
 
             # maskHeight = vpHeight / camera.overscan / scale
-            maskHeight = vpHeight / scale
+            maskHeight = vpHeight / camera.overscan/scale
             maskWidth = maskHeight * deviceAspectRatio
         else:
             om.MGlobal.displayError("[ViewMask] Unknown Film Fit value")
@@ -396,10 +395,10 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
         elif counter_padding > 6:
             counter_padding = 6
 
-        current_time = int(cmds.currentTime(q=True))
-        counter_position = fnDagNode.findPlug("counterPosition", False).asInt()
-        if counter_position > 0 and counter_position <= len(ViewMaskLocator.TEXT_ATTRS) / 2:
-            data.text_fields[counter_position - 1] = "{0}".format(str(current_time).zfill(counter_padding))
+        # current_time = int(cmds.currentTime(q=True))
+        # counter_position = fnDagNode.findPlug("counterPosition", False).asInt()
+        # if counter_position > 0 and counter_position <= len(ViewMaskLocator.TEXT_ATTRS) / 2:
+        #     data.text_fields[counter_position - 1] = "{0}".format(str(current_time).zfill(counter_padding))
 
         data.text_padding = fnDagNode.findPlug("textPadding", False).asInt()
 
