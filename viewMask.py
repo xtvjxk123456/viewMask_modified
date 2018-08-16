@@ -1,3 +1,4 @@
+# coding:utf-8
 import maya.api.OpenMaya as om
 import maya.api.OpenMayaRender as omr
 import maya.api.OpenMayaUI as omui
@@ -164,7 +165,178 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         ViewMaskLocator.addAttribute(borderScale)
 
     def draw(self, view, path, style, status):
-        return None
+        # collect data
+        cameraPath = view.getCamera()
+        camera = om.MFnCamera(cameraPath)
+        fnDagNode = om.MFnDagNode(path)
+        cameraName = fnDagNode.findPlug("camera", False).asString()
+        textFields = []
+        for i in range(0, len(ViewMaskLocator.TEXT_ATTRS), 2):
+            textFields.append(fnDagNode.findPlug(ViewMaskLocator.TEXT_ATTRS[i], False).asString())
+        counterPadding = fnDagNode.findPlug("counterPadding", False).asInt()
+        if counterPadding < 1:
+            counterPadding = 1
+        elif counterPadding > 6:
+            counterPadding = 6
+
+        textFields[4] = "{0}/{1:.1f}".format(cameraPath.partialPathName(), camera.focalLength)
+
+        currentTime = int(cmds.currentTime(q=True))
+        counterPosition = fnDagNode.findPlug("counterPosition", False).asInt()
+        if counterPosition > 0 and counterPosition <= len(ViewMaskLocator.TEXT_ATTRS) / 2:
+            textFields[counterPosition - 1] = "{0}{1}".format(str(currentTime).zfill(counterPadding),
+                                                              textFields[counterPosition - 1])
+
+        textPadding = fnDagNode.findPlug("textPadding", False).asInt()
+
+        fontName = fnDagNode.findPlug("fontName", False).asString()
+        r = fnDagNode.findPlug("fontColorR", False).asFloat()
+        g = fnDagNode.findPlug("fontColorG", False).asFloat()
+        b = fnDagNode.findPlug("fontColorB", False).asFloat()
+        a = fnDagNode.findPlug("fontAlpha", False).asFloat()
+        fontColor = om.MColor((r, g, b, a))
+
+        fontScale = fnDagNode.findPlug("fontScale", False).asFloat()
+        r = fnDagNode.findPlug("borderColorR", False).asFloat()
+        g = fnDagNode.findPlug("borderColorG", False).asFloat()
+        b = fnDagNode.findPlug("borderColorB", False).asFloat()
+        a = fnDagNode.findPlug("borderAlpha", False).asFloat()
+        borderColor = om.MColor((r, g, b, a))
+
+        borderScale = fnDagNode.findPlug("borderScale", False).asFloat()
+
+        topBorder = fnDagNode.findPlug("topBorder", False).asBool()
+        bottomBorder = fnDagNode.findPlug("bottomBorder", False).asBool()
+
+        # draw
+        if cameraName and cameraName in cmds.listCameras() and not self.isCameraMatch(cameraPath, cameraName):
+            return
+
+        cameraAspectRatio = camera.aspectRatio()
+        deviceAspectRatio = cmds.getAttr("defaultResolution.deviceAspectRatio")
+
+        vpWidth = view.portWidth()
+        vpHeight = view.portHeight()
+        vpHalfWidth = 0.5 * vpWidth
+        vpHalfHeight = 0.5 * vpHeight
+        vpAspectRatio = vpWidth / float(vpHeight)
+
+        scale = 1.0
+
+        if camera.filmFit == om.MFnCamera.kHorizontalFilmFit:
+            # maskWidth = vpWidth / camera.overscan
+            maskWidth = vpWidth
+            maskHeight = maskWidth / deviceAspectRatio
+        elif camera.filmFit == om.MFnCamera.kVerticalFilmFit:
+            # maskHeight = vpHeight / camera.overscan
+            maskHeight = vpHeight
+            maskWidth = maskHeight * deviceAspectRatio
+        elif camera.filmFit == om.MFnCamera.kFillFilmFit:
+            if vpAspectRatio < cameraAspectRatio:
+                if cameraAspectRatio < deviceAspectRatio:
+                    scale = cameraAspectRatio / vpAspectRatio
+                else:
+                    scale = deviceAspectRatio / vpAspectRatio
+            elif cameraAspectRatio > deviceAspectRatio:
+                scale = deviceAspectRatio / cameraAspectRatio
+
+            # maskWidth = vpWidth / camera.overscan * scale
+            maskWidth = vpWidth * scale
+            maskHeight = maskWidth / deviceAspectRatio
+
+        elif camera.filmFit == om.MFnCamera.kOverscanFilmFit:
+            if vpAspectRatio < cameraAspectRatio:
+                if cameraAspectRatio < deviceAspectRatio:
+                    scale = cameraAspectRatio / vpAspectRatio
+                else:
+                    scale = deviceAspectRatio / vpAspectRatio
+            elif cameraAspectRatio > deviceAspectRatio:
+                scale = deviceAspectRatio / cameraAspectRatio
+
+            # maskHeight = vpHeight / camera.overscan / scale
+            maskHeight = vpHeight / scale
+            maskWidth = maskHeight * deviceAspectRatio
+        else:
+            om.MGlobal.displayError("[ViewMask] Unknown Film Fit value")
+            return
+
+        maskHalfWidth = 0.5 * maskWidth
+        maskX = vpHalfWidth - maskHalfWidth
+
+        maskHalfHeight = 0.5 * maskHeight
+        maskBottomY = vpHalfHeight - maskHalfHeight
+        maskTopY = vpHalfHeight + maskHalfHeight
+
+        borderHeight = int(0.05 * maskHeight * borderScale)
+        bgSize = (int(maskWidth), borderHeight)
+
+        # Getting the OpenGL renderer
+        import maya.OpenMayaRender as v1omr
+        import maya.OpenMayaUI as v1omui
+        glRenderer = v1omr.MHardwareRenderer.theRenderer()
+        glFT = glRenderer.glFunctionTable()
+
+        # Pushed current state
+        glFT.glPushAttrib(v1omr.MGL_CURRENT_BIT)
+        # Enabled Blend mode (to enable transparency)
+        glFT.glEnable(v1omr.MGL_BLEND)
+        # Defined Blend function
+        glFT.glBlendFunc(v1omr.MGL_SRC_ALPHA, v1omr.MGL_ONE_MINUS_SRC_ALPHA)
+        # create x-ray view and will be seen always
+        glFT.glDisable(v1omr.MGL_DEPTH_TEST)
+
+        # Starting the OpenGL drawing
+        view.beginGL()
+        # 设置字体，字体大小，字体颜色
+        # viewport 1无法自定义字体和字体大小
+        view.setDrawColor(fontColor)
+        if topBorder:
+            pass
+        if bottomBorder:
+            pass
+        self.drawText(view, om.MPoint(maskX + textPadding, maskTopY - borderHeight), textFields[0],
+                      v1omui.M3dView.kLeft)
+        self.drawText(view, om.MPoint(vpHalfWidth, maskTopY - borderHeight), textFields[1],
+                      v1omui.M3dView.kCenter)
+        self.drawText(view, om.MPoint(maskX + maskWidth - textPadding, maskTopY - borderHeight),
+                      textFields[2], v1omui.M3dView.kRight)
+        self.drawText(view, om.MPoint(maskX + textPadding, maskBottomY), textFields[3],
+                      v1omui.M3dView.kLeft)
+        self.drawText(view, om.MPoint(vpHalfWidth, maskBottomY), textFields[4], v1omui.M3dView.kCenter
+                      )
+        self.drawText(view, om.MPoint(maskX + maskWidth - textPadding, maskBottomY), textFields[5],
+                      v1omui.M3dView.kRight)
+
+        glFT.glDisable(v1omr.MGL_BLEND)
+        glFT.glEnable(v1omr.MGL_DEPTH_TEST)
+        # Restore the state
+        glFT.glPopAttrib()
+        # Ending the OpenGL drawing
+        view.endGL(0)
+
+    def isCameraMatch(self, cameraPath, name):
+        """
+        """
+        path_name = cameraPath.fullPathName()
+        split_path_name = path_name.split('|')
+        if len(split_path_name) >= 1:
+            if split_path_name[-1] == name:
+                return True
+        if len(split_path_name) >= 2:
+            if split_path_name[-2] == name:
+                return True
+
+        return False
+
+    def drawText(self, view, position2d, text, alignment, ):
+        """
+        """
+        if len(text) > 0:
+            # 转换位置
+            textPositionNearPlane = om.MPoint()
+            textPositionFarPlane = om.MPoint()
+            view.viewToWorld(position2d.x, position2d.y, textPositionNearPlane, textPositionFarPlane)
+            view.drawText(text, textPositionNearPlane, alignment)
 
 
 class ViewMaskData(om.MUserData):
