@@ -71,7 +71,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         for i in range(0, len(cls.TEXT_ATTRS), 2):
             tAttr = om.MFnTypedAttribute()
             stringData = om.MFnStringData()
-            #obj = stringData.create("Position {0}".format(str(i / 2 + 1).zfill(2)))
+            # obj = stringData.create("Position {0}".format(str(i / 2 + 1).zfill(2)))
             obj = stringData.create()
             position = tAttr.create(cls.TEXT_ATTRS[i], cls.TEXT_ATTRS[i + 1], om.MFnData.kString, obj)
             tAttr.writable = True
@@ -163,6 +163,9 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         attr.setMax(2.0)
         ViewMaskLocator.addAttribute(borderScale)
 
+    def draw(self, view, path, style, status):
+        return None
+
 
 class ViewMaskData(om.MUserData):
     """
@@ -227,7 +230,8 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
         currentTime = int(cmds.currentTime(q=True))
         counterPosition = fnDagNode.findPlug("counterPosition", False).asInt()
         if counterPosition > 0 and counterPosition <= len(ViewMaskLocator.TEXT_ATTRS) / 2:
-            data.textFields[counterPosition - 1] = "{0}{1}".format(str(currentTime).zfill(counterPadding), data.textFields[counterPosition - 1])
+            data.textFields[counterPosition - 1] = "{0}{1}".format(str(currentTime).zfill(counterPadding),
+                                                                   data.textFields[counterPosition - 1])
 
         data.textPadding = fnDagNode.findPlug("textPadding", False).asInt()
 
@@ -268,7 +272,8 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
         cameraPath = frameContext.getCurrentCameraPath()
         camera = om.MFnCamera(cameraPath)
 
-        if data.cameraName and self.cameraExists(data.cameraName) and not self.isCameraMatch(cameraPath, data.cameraName):
+        if data.cameraName and self.cameraExists(data.cameraName) and not self.isCameraMatch(cameraPath,
+                                                                                             data.cameraName):
             return
 
         cameraAspectRatio = camera.aspectRatio()
@@ -282,11 +287,11 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
         scale = 1.0
 
         if camera.filmFit == om.MFnCamera.kHorizontalFilmFit:
-            #maskWidth = vpWidth / camera.overscan
+            # maskWidth = vpWidth / camera.overscan
             maskWidth = vpWidth
             maskHeight = maskWidth / deviceAspectRatio
         elif camera.filmFit == om.MFnCamera.kVerticalFilmFit:
-            #maskHeight = vpHeight / camera.overscan
+            # maskHeight = vpHeight / camera.overscan
             maskHeight = vpHeight
             maskWidth = maskHeight * deviceAspectRatio
         elif camera.filmFit == om.MFnCamera.kFillFilmFit:
@@ -298,7 +303,7 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
             elif cameraAspectRatio > deviceAspectRatio:
                 scale = deviceAspectRatio / cameraAspectRatio
 
-            #maskWidth = vpWidth / camera.overscan * scale
+            # maskWidth = vpWidth / camera.overscan * scale
             maskWidth = vpWidth * scale
             maskHeight = maskWidth / deviceAspectRatio
 
@@ -311,7 +316,7 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
             elif cameraAspectRatio > deviceAspectRatio:
                 scale = deviceAspectRatio / cameraAspectRatio
 
-            #maskHeight = vpHeight / camera.overscan / scale
+            # maskHeight = vpHeight / camera.overscan / scale
             maskHeight = vpHeight / scale
             maskWidth = maskHeight * deviceAspectRatio
         else:
@@ -338,25 +343,33 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
         if data.bottomBorder:
             self.drawBorder(drawManager, om.MPoint(maskX, maskBottomY), bgSize, data.borderColor)
 
-        self.drawText(drawManager, om.MPoint(maskX + data.textPadding, maskTopY - borderHeight), data.textFields[0], omr.MUIDrawManager.kLeft, bgSize)
-        self.drawText(drawManager, om.MPoint(vpHalfWidth, maskTopY - borderHeight), data.textFields[1], omr.MUIDrawManager.kCenter, bgSize)
-        self.drawText(drawManager, om.MPoint(maskX + maskWidth - data.textPadding, maskTopY - borderHeight), data.textFields[2], omr.MUIDrawManager.kRight, bgSize)
-        self.drawText(drawManager, om.MPoint(maskX + data.textPadding, maskBottomY), data.textFields[3], omr.MUIDrawManager.kLeft, bgSize)
-        self.drawText(drawManager, om.MPoint(vpHalfWidth, maskBottomY), data.textFields[4], omr.MUIDrawManager.kCenter, bgSize)
-        self.drawText(drawManager, om.MPoint(maskX + maskWidth - data.textPadding, maskBottomY), data.textFields[5], omr.MUIDrawManager.kRight, bgSize)
+        self.drawText(drawManager, om.MPoint(maskX + data.textPadding, maskTopY - borderHeight), data.textFields[0],
+                      omr.MUIDrawManager.kLeft, bgSize)
+        self.drawText(drawManager, om.MPoint(vpHalfWidth, maskTopY - borderHeight), data.textFields[1],
+                      omr.MUIDrawManager.kCenter, bgSize)
+        self.drawText(drawManager, om.MPoint(maskX + maskWidth - data.textPadding, maskTopY - borderHeight),
+                      data.textFields[2], omr.MUIDrawManager.kRight, bgSize)
+        self.drawText(drawManager, om.MPoint(maskX + data.textPadding, maskBottomY), data.textFields[3],
+                      omr.MUIDrawManager.kLeft, bgSize)
+        self.drawText(drawManager, om.MPoint(vpHalfWidth, maskBottomY), data.textFields[4], omr.MUIDrawManager.kCenter,
+                      bgSize)
+        self.drawText(drawManager, om.MPoint(maskX + maskWidth - data.textPadding, maskBottomY), data.textFields[5],
+                      omr.MUIDrawManager.kRight, bgSize)
 
         drawManager.endDrawable()
 
     def drawBorder(self, drawManager, position, bgSize, color):
         """
         """
-        drawManager.text2d(position, " ", alignment=omr.MUIDrawManager.kLeft, backgroundSize=bgSize, backgroundColor=color)
+        drawManager.text2d(position, " ", alignment=omr.MUIDrawManager.kLeft, backgroundSize=bgSize,
+                           backgroundColor=color)
 
     def drawText(self, drawManager, position, text, alignment, bgSize):
         """
         """
-        if(len(text) > 0):
-            drawManager.text2d(position, text, alignment=alignment, backgroundSize=bgSize, backgroundColor=om.MColor((0.0, 0.0, 0.0, 0.0)))
+        if (len(text) > 0):
+            drawManager.text2d(position, text, alignment=alignment, backgroundSize=bgSize,
+                               backgroundColor=om.MColor((0.0, 0.0, 0.0, 0.0)))
 
     def cameraExists(self, name):
         """
@@ -419,7 +432,8 @@ def uninitializePlugin(obj):
     pluginFn = om.MFnPlugin(obj)
 
     try:
-        omr.MDrawRegistry.deregisterDrawOverrideCreator(ViewMaskLocator.DRAW_DB_CLASSIFICATION, ViewMaskLocator.DRAW_REGISTRANT_ID)
+        omr.MDrawRegistry.deregisterDrawOverrideCreator(ViewMaskLocator.DRAW_DB_CLASSIFICATION,
+                                                        ViewMaskLocator.DRAW_REGISTRANT_ID)
     except:
         om.MGlobal.displayError("Failed to deregister draw override: {0}".format(ViewMaskDrawOverride.NAME))
 
@@ -430,7 +444,6 @@ def uninitializePlugin(obj):
 
 
 if __name__ == "__main__":
-
     cmds.file(f=True, new=True)
 
     plugin_name = "viewMask.py"
