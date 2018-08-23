@@ -4,6 +4,8 @@ import maya.api.OpenMayaRender as omr
 import maya.api.OpenMayaUI as omui
 
 import maya.cmds as cmds
+from Qt import QtGui, QtCore
+from array import array
 
 
 def maya_useNewAPI():
@@ -224,11 +226,11 @@ class ViewMaskLocator(omui.MPxLocatorNode):
 
         if camera.filmFit == om.MFnCamera.kHorizontalFilmFit:
             # maskWidth = vpWidth / camera.overscan
-            maskWidth = vpWidth/camera.overscan
+            maskWidth = vpWidth / camera.overscan
             maskHeight = maskWidth / deviceAspectRatio
         elif camera.filmFit == om.MFnCamera.kVerticalFilmFit:
             # maskHeight = vpHeight / camera.overscan
-            maskHeight = vpHeight/camera.overscan
+            maskHeight = vpHeight / camera.overscan
             maskWidth = maskHeight * deviceAspectRatio
         elif camera.filmFit == om.MFnCamera.kFillFilmFit:
             if vpAspectRatio < cameraAspectRatio:
@@ -240,7 +242,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
                 scale = deviceAspectRatio / cameraAspectRatio
 
             # maskWidth = vpWidth / camera.overscan * scale
-            maskWidth = vpWidth/camera.overscan * scale
+            maskWidth = vpWidth / camera.overscan * scale
             maskHeight = maskWidth / deviceAspectRatio
 
         elif camera.filmFit == om.MFnCamera.kOverscanFilmFit:
@@ -253,7 +255,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
                 scale = deviceAspectRatio / cameraAspectRatio
 
             # maskHeight = vpHeight / camera.overscan / scale
-            maskHeight = vpHeight / camera.overscan/scale
+            maskHeight = vpHeight / camera.overscan / scale
             maskWidth = maskHeight * deviceAspectRatio
         else:
             om.MGlobal.displayError("[ViewMask] Unknown Film Fit value")
@@ -305,6 +307,35 @@ class ViewMaskLocator(omui.MPxLocatorNode):
                       )
         self.drawText(view, om.MPoint(maskX + maskWidth - textPadding, maskBottomY), textFields[5],
                       v1omui.M3dView.kRight)
+
+        qimg = QtGui.QImage(200, 200, QtGui.QImage.Format_ARGB32)
+        qimg.fill(QtCore.Qt.transparent)
+        painter = QtGui.QPainter(qimg)
+
+        qpen = QtGui.QPen(QtGui.QBrush(QtCore.Qt.red), 2)
+        painter.setPen(qpen)
+        painter.drawEllipse(100, 100, 50, 50)
+        painter.end()
+        qimg = qimg.rgbSwapped()
+        # qimg 完成
+
+
+        data = QtCore.QByteArray()
+        buffer = QtCore.QBuffer()
+        buffer.setBuffer(data)
+        buffer.open(QtCore.QIODevice.WriteOnly)
+        qimg.save(buffer, "PNG")
+        buffer.close()
+        # array_data = array('B', data.data())
+        # --------------------------------
+
+
+        img = om.MImage()
+        img.setPixels(data.data(), 200, 200)
+
+        # img.readFromFile(r"C:\Users\zhangxuqiang\Desktop\draw.png")
+
+        view.writeColorBuffer(img, 100, 100)
 
         glFT.glDisable(v1omr.MGL_BLEND)
         glFT.glEnable(v1omr.MGL_DEPTH_TEST)
@@ -439,7 +470,8 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
         camera_path = frameContext.getCurrentCameraPath()
         camera = om.MFnCamera(camera_path)
 
-        if data.camera_name and self.cameraExists(data.camera_name) and not self.isCameraMatch(camera_path, data.camera_name):
+        if data.camera_name and self.cameraExists(data.camera_name) and not self.isCameraMatch(camera_path,
+                                                                                               data.camera_name):
             return
 
         camera_aspect_ratio = camera.aspectRatio()
@@ -501,16 +533,23 @@ class ViewMaskDrawOverride(omr.MPxDrawOverride):
         drawManager.setColor(data.font_color)
 
         if data.top_border:
-            self.drawBorder(drawManager, om.MPoint(mask_x, mask_top_y - border_height), background_size, data.border_color)
+            self.drawBorder(drawManager, om.MPoint(mask_x, mask_top_y - border_height), background_size,
+                            data.border_color)
         if data.bottom_border:
             self.drawBorder(drawManager, om.MPoint(mask_x, mask_bottom_y), background_size, data.border_color)
 
-        self.drawText(drawManager, om.MPoint(mask_x + data.text_padding, mask_top_y - border_height), data.text_fields[0], omr.MUIDrawManager.kLeft, background_size)
-        self.drawText(drawManager, om.MPoint(vp_half_width, mask_top_y - border_height), data.text_fields[1], omr.MUIDrawManager.kCenter, background_size)
-        self.drawText(drawManager, om.MPoint(mask_x + mask_width - data.text_padding, mask_top_y - border_height), data.text_fields[2], omr.MUIDrawManager.kRight, background_size)
-        self.drawText(drawManager, om.MPoint(mask_x + data.text_padding, mask_bottom_y), data.text_fields[3], omr.MUIDrawManager.kLeft, background_size)
-        self.drawText(drawManager, om.MPoint(vp_half_width, mask_bottom_y), data.text_fields[4], omr.MUIDrawManager.kCenter, background_size)
-        self.drawText(drawManager, om.MPoint(mask_x + mask_width - data.text_padding, mask_bottom_y), data.text_fields[5], omr.MUIDrawManager.kRight, background_size)
+        self.drawText(drawManager, om.MPoint(mask_x + data.text_padding, mask_top_y - border_height),
+                      data.text_fields[0], omr.MUIDrawManager.kLeft, background_size)
+        self.drawText(drawManager, om.MPoint(vp_half_width, mask_top_y - border_height), data.text_fields[1],
+                      omr.MUIDrawManager.kCenter, background_size)
+        self.drawText(drawManager, om.MPoint(mask_x + mask_width - data.text_padding, mask_top_y - border_height),
+                      data.text_fields[2], omr.MUIDrawManager.kRight, background_size)
+        self.drawText(drawManager, om.MPoint(mask_x + data.text_padding, mask_bottom_y), data.text_fields[3],
+                      omr.MUIDrawManager.kLeft, background_size)
+        self.drawText(drawManager, om.MPoint(vp_half_width, mask_bottom_y), data.text_fields[4],
+                      omr.MUIDrawManager.kCenter, background_size)
+        self.drawText(drawManager, om.MPoint(mask_x + mask_width - data.text_padding, mask_bottom_y),
+                      data.text_fields[5], omr.MUIDrawManager.kRight, background_size)
 
         drawManager.endDrawable()
 
