@@ -311,28 +311,29 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         # self.drawText(view, om.MPoint(maskX + maskWidth - textPadding, maskBottomY), textFields[5],
         #               v1omui.M3dView.kRight)
 
-        qimg = QtGui.QImage(200, 200, QtGui.QImage.Format_ARGB32)
-        qimg.fill(QtCore.Qt.transparent)
-        painter = QtGui.QPainter(qimg)
+        # -------------------------------------------------------
+        # 生成MImage开始
+        mask_image = QtGui.QImage(maskWidth, maskHeight, QtGui.QImage.Format_ARGB32)
+        mask_image.fill(QtCore.Qt.transparent)
 
+        painter = QtGui.QPainter()
+        # begin draw
         qpen = QtGui.QPen(QtGui.QBrush(QtCore.Qt.red), 2)
+
+        painter.begin(mask_image)
         painter.setPen(qpen)
-        painter.drawEllipse(QtCore.QPoint(20, 20), 50, 50)
-        # painter.drawEllipse(150, 150, 10, 10)
+        painter.drawEllipse(QtCore.QPoint(100, 100), 50, 50)
         painter.end()
-        # qimg = qimg.rgbSwapped()
-        # qimg 完成
-        ptr = qimg.constBits()
 
-        # --------------------------------
+        ptr = mask_image.constBits()
 
-
-        img = om.MImage()
-        img.setRGBA(True)
-        img.setPixels(bytearray(ptr), 200, 200)
-        img.verticalFlip()
-
-        view.writeColorBuffer(img, 0, 0)
+        api_img = om.MImage()
+        api_img.setRGBA(True)
+        api_img.setPixels(bytearray(ptr), int(maskWidth), int(maskHeight))
+        api_img.verticalFlip()
+        # 生成结束
+        # -----------------------------------------------------
+        view.writeColorBuffer(api_img, int(maskX), int(maskBottomY))
 
         glFT.glDisable(v1omr.MGL_BLEND)
         glFT.glEnable(v1omr.MGL_DEPTH_TEST)
@@ -354,16 +355,6 @@ class ViewMaskLocator(omui.MPxLocatorNode):
                 return True
 
         return False
-
-    def drawText(self, view, position2d, text, alignment, ):
-        """
-        """
-        if len(text) > 0:
-            # 转换位置
-            textPositionNearPlane = om.MPoint()
-            textPositionFarPlane = om.MPoint()
-            view.viewToWorld(int(position2d.x), int(position2d.y), textPositionNearPlane, textPositionFarPlane)
-            view.drawText(text, textPositionNearPlane, alignment)
 
 
 class ViewMaskData(om.MUserData):
