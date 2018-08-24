@@ -315,25 +315,19 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         qpen = QtGui.QPen(QtGui.QBrush(QtCore.Qt.red), 2)
         painter.setPen(qpen)
         painter.drawEllipse(100, 100, 50, 50)
+        painter.drawEllipse(150, 150, 10, 10)
         painter.end()
-        qimg = qimg.rgbSwapped()
+        # qimg = qimg.rgbSwapped()
         # qimg 完成
+        ptr = qimg.constBits()
 
-
-        data = QtCore.QByteArray()
-        buffer = QtCore.QBuffer()
-        buffer.setBuffer(data)
-        buffer.open(QtCore.QIODevice.WriteOnly)
-        qimg.save(buffer, "PNG")
-        buffer.close()
-        # array_data = array('B', data.data())
         # --------------------------------
 
 
         img = om.MImage()
-        img.setPixels(data.data(), 200, 200)
-
-        # img.readFromFile(r"C:\Users\zhangxuqiang\Desktop\draw.png")
+        img.setRGBA(True)
+        img.setPixels(bytearray(ptr), 200, 200)
+        img.verticalFlip()
 
         view.writeColorBuffer(img, 100, 100)
 
