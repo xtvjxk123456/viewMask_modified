@@ -195,14 +195,16 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         g = fnDagNode.findPlug("fontColorG", False).asFloat()
         b = fnDagNode.findPlug("fontColorB", False).asFloat()
         a = fnDagNode.findPlug("fontAlpha", False).asFloat()
-        fontColor = om.MColor((r, g, b, a))
+        # fontColor = om.MColor((r, g, b, a))
+        fontColor = QtGui.QColor(r * 255, g * 255, b * 255, a * 255)
 
         fontScale = fnDagNode.findPlug("fontScale", False).asFloat()
         r = fnDagNode.findPlug("borderColorR", False).asFloat()
         g = fnDagNode.findPlug("borderColorG", False).asFloat()
         b = fnDagNode.findPlug("borderColorB", False).asFloat()
         a = fnDagNode.findPlug("borderAlpha", False).asFloat()
-        borderColor = om.MColor((r, g, b, a))
+        # borderColor = om.MColor((r, g, b, a))
+        borderColor = QtGui.QColor(r * 255, g * 255, b * 255, a * 255)
 
         borderScale = fnDagNode.findPlug("borderScale", False).asFloat()
 
@@ -292,10 +294,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         # # 设置字体，字体大小，字体颜色
         # # viewport 1无法自定义字体和字体大小
         # view.setDrawColor(fontColor)
-        if topBorder:
-            pass
-        if bottomBorder:
-            pass
+
         # todo 绘制文字
 
         # self.drawText(view, om.MPoint(maskX + textPadding, maskTopY - borderHeight), textFields[0],
@@ -318,11 +317,32 @@ class ViewMaskLocator(omui.MPxLocatorNode):
 
         painter = QtGui.QPainter()
         # begin draw
-        qpen = QtGui.QPen(QtGui.QBrush(QtCore.Qt.red), 2)
 
         painter.begin(mask_image)
-        painter.setPen(qpen)
-        painter.drawEllipse(QtCore.QPoint(100, 100), 50, 50)
+        # 绘制中
+        # 先绘制border
+        borderPen = QtGui.QPen(borderColor)
+        borderBrush = QtGui.QBrush(borderColor)
+        painter.setPen(borderPen)
+        painter.setBrush(borderBrush)
+
+        if topBorder:
+            painter.drawRect(0, 0, int(maskWidth), int(borderHeight), )
+        if bottomBorder:
+            painter.drawRect(0, int(maskHeight - borderHeight), int(maskWidth), int(borderHeight), )
+        # 再绘制text
+        # Text pen
+        # textPen = QtGui.QPen(fontColor, 2)
+        # try:
+        #     textFont = QtGui.QFont(fontName, fontScale)
+        # except Exception:
+        #     textFont = QtGui.QFont("Times New Roman", fontScale)
+        # painter.setPen(textPen)
+        # painter.setFont(textFont)
+        #
+        # # painter.drawText(0, int(borderHeight), textFields[0])
+        # painter.drawEllipse(QtCore.QPoint(0, borderHeight), borderHeight, borderHeight)
+
         painter.end()
 
         ptr = mask_image.constBits()
