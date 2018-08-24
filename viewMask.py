@@ -281,6 +281,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         glFT.glPushAttrib(v1omr.MGL_CURRENT_BIT)
         # Enabled Blend mode (to enable transparency)
         glFT.glEnable(v1omr.MGL_BLEND)
+
         # Defined Blend function
         glFT.glBlendFunc(v1omr.MGL_SRC_ALPHA, v1omr.MGL_ONE_MINUS_SRC_ALPHA)
         # create x-ray view and will be seen always
@@ -288,25 +289,27 @@ class ViewMaskLocator(omui.MPxLocatorNode):
 
         # Starting the OpenGL drawing
         view.beginGL()
-        # 设置字体，字体大小，字体颜色
-        # viewport 1无法自定义字体和字体大小
-        view.setDrawColor(fontColor)
+        # # 设置字体，字体大小，字体颜色
+        # # viewport 1无法自定义字体和字体大小
+        # view.setDrawColor(fontColor)
         if topBorder:
             pass
         if bottomBorder:
             pass
-        self.drawText(view, om.MPoint(maskX + textPadding, maskTopY - borderHeight), textFields[0],
-                      v1omui.M3dView.kLeft)
-        self.drawText(view, om.MPoint(vpHalfWidth, maskTopY - borderHeight), textFields[1],
-                      v1omui.M3dView.kCenter)
-        self.drawText(view, om.MPoint(maskX + maskWidth - textPadding, maskTopY - borderHeight),
-                      textFields[2], v1omui.M3dView.kRight)
-        self.drawText(view, om.MPoint(maskX + textPadding, maskBottomY), textFields[3],
-                      v1omui.M3dView.kLeft)
-        self.drawText(view, om.MPoint(vpHalfWidth, maskBottomY), textFields[4], v1omui.M3dView.kCenter
-                      )
-        self.drawText(view, om.MPoint(maskX + maskWidth - textPadding, maskBottomY), textFields[5],
-                      v1omui.M3dView.kRight)
+        # todo 绘制文字
+
+        # self.drawText(view, om.MPoint(maskX + textPadding, maskTopY - borderHeight), textFields[0],
+        #               v1omui.M3dView.kLeft)
+        # self.drawText(view, om.MPoint(vpHalfWidth, maskTopY - borderHeight), textFields[1],
+        #               v1omui.M3dView.kCenter)
+        # self.drawText(view, om.MPoint(maskX + maskWidth - textPadding, maskTopY - borderHeight),
+        #               textFields[2], v1omui.M3dView.kRight)
+        # self.drawText(view, om.MPoint(maskX + textPadding, maskBottomY), textFields[3],
+        #               v1omui.M3dView.kLeft)
+        # self.drawText(view, om.MPoint(vpHalfWidth, maskBottomY), textFields[4], v1omui.M3dView.kCenter
+        #               )
+        # self.drawText(view, om.MPoint(maskX + maskWidth - textPadding, maskBottomY), textFields[5],
+        #               v1omui.M3dView.kRight)
 
         qimg = QtGui.QImage(200, 200, QtGui.QImage.Format_ARGB32)
         qimg.fill(QtCore.Qt.transparent)
@@ -314,8 +317,8 @@ class ViewMaskLocator(omui.MPxLocatorNode):
 
         qpen = QtGui.QPen(QtGui.QBrush(QtCore.Qt.red), 2)
         painter.setPen(qpen)
-        painter.drawEllipse(100, 100, 50, 50)
-        painter.drawEllipse(150, 150, 10, 10)
+        painter.drawEllipse(QtCore.QPoint(20, 20), 50, 50)
+        # painter.drawEllipse(150, 150, 10, 10)
         painter.end()
         # qimg = qimg.rgbSwapped()
         # qimg 完成
@@ -329,7 +332,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         img.setPixels(bytearray(ptr), 200, 200)
         img.verticalFlip()
 
-        view.writeColorBuffer(img, 100, 100)
+        view.writeColorBuffer(img, 0, 0)
 
         glFT.glDisable(v1omr.MGL_BLEND)
         glFT.glEnable(v1omr.MGL_DEPTH_TEST)
