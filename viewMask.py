@@ -332,16 +332,28 @@ class ViewMaskLocator(omui.MPxLocatorNode):
             painter.drawRect(0, int(maskHeight - borderHeight), int(maskWidth), int(borderHeight), )
         # 再绘制text
         # Text pen
-        # textPen = QtGui.QPen(fontColor, 2)
-        # try:
-        #     textFont = QtGui.QFont(fontName, fontScale)
-        # except Exception:
-        #     textFont = QtGui.QFont("Times New Roman", fontScale)
-        # painter.setPen(textPen)
-        # painter.setFont(textFont)
-        #
-        # # painter.drawText(0, int(borderHeight), textFields[0])
-        # painter.drawEllipse(QtCore.QPoint(0, borderHeight), borderHeight, borderHeight)
+        textPen = QtGui.QPen(fontColor, 2)
+        try:
+            textFont = QtGui.QFont(fontName, fontScale * 12)
+        except Exception:
+            textFont = QtGui.QFont("Times New Roman", fontScale * 12)
+        painter.setPen(textPen)
+        painter.setFont(textFont)
+
+        maxTextWidth = 200
+        painter.drawText(QtCore.QRect(textPadding, 0, maxTextWidth, borderHeight),
+                         QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter, textFields[0])
+        painter.drawText(QtCore.QRect(maskWidth/2-maxTextWidth/2, 0, maxTextWidth, borderHeight),
+                         QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter, textFields[1])
+        painter.drawText(QtCore.QRect(maskWidth-maxTextWidth-textPadding, 0, maxTextWidth, borderHeight),
+                         QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter, textFields[2])
+
+        painter.drawText(QtCore.QRect(textPadding, maskHeight-borderHeight, maxTextWidth, borderHeight),
+                         QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter, textFields[3])
+        painter.drawText(QtCore.QRect(maskWidth/2-maxTextWidth/2, maskHeight-borderHeight, maxTextWidth, borderHeight),
+                         QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter, textFields[4])
+        painter.drawText(QtCore.QRect(maskWidth - maxTextWidth-textPadding, maskHeight-borderHeight, maxTextWidth, borderHeight),
+                         QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter, textFields[5])
 
         painter.end()
 
