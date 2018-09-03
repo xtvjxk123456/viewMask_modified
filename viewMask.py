@@ -340,7 +340,7 @@ class ViewMaskLocator(omui.MPxLocatorNode):
         painter.setPen(textPen)
         painter.setFont(textFont)
 
-        maxTextWidth = 200
+        maxTextWidth = 640
         painter.drawText(QtCore.QRect(textPadding, 0, maxTextWidth, borderHeight),
                          QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter, textFields[0])
         painter.drawText(QtCore.QRect(maskWidth/2-maxTextWidth/2, 0, maxTextWidth, borderHeight),
